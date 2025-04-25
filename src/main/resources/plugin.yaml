@@ -4,19 +4,19 @@ apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
   # The name defines how the plugin is invoked, A unique name
-  name: starter
+  name: halo-publish
 spec:
   enabled: true
   requires: ">=2.20.0"
   author:
-    name: Halo
-    website: https://github.com/halo-dev
+    name: LiuSu
+    website: https://github.com/gongxings
   logo: logo.png
-  homepage: https://github.com/halo-dev/plugin-starter#readme
-  repo: https://github.com/halo-dev/plugin-starter
-  issues: https://github.com/halo-dev/plugin-starter/issues
-  displayName: "插件快速开始模板"
-  description: "这是一个插件快速开始模板"
+  homepage: https://github.com/gongxings/halo-publish#readme
+  repo: https://github.com/gongxings/halo-publish
+  issues: https://github.com/gongxings/halo-publish/issues
+  displayName: "内容发布助手"
+  description: "实现Halo的文章同步发布到微信公众号、小红书、CSDN等平台"
   license:
     - name: "GPL-3.0"
-      url: "https://github.com/halo-dev/plugin-starter/blob/main/LICENSE"
+      url: "https://github.com/gongxings/halo-publish/blob/main/LICENSE"
