@@ -16,7 +16,6 @@ import java.util.Map;
  * Juejin (掘金) publish implementation (best-effort):
  * Uses web endpoints which historically exist (see community references).
  * For production, obtain valid cookies and CSRF tokens.
- *
  * Reference: https://github.com/chenzijia12300/juejin-api
  */
 @Service("juejinSyncService")
