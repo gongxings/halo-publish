@@ -1,7 +1,8 @@
 package com.biyebang.halo.publish.service;
 
 import com.biyebang.halo.publish.dto.ArticleDTO;
+import reactor.core.publisher.Mono;
 
 public interface SyncService {
-    void publish(ArticleDTO article) throws Exception;
+    Mono<Void> publish(ArticleDTO article);
 }

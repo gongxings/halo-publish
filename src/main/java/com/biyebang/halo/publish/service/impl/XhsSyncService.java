@@ -3,54 +3,58 @@ package com.biyebang.halo.publish.service.impl;
 import com.biyebang.halo.publish.config.PlatformConfig;
 import com.biyebang.halo.publish.dto.ArticleDTO;
 import com.biyebang.halo.publish.service.SyncService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Xiaohongshu (小红书) adapter.
- * Xiaohongshu provides a partner/open API in sandbox modes; production APIs require application and credentials.
- * See sandbox docs: http://flssandbox.xiaohongshu.com/ark/open_api/ (community references)
- */
+@Slf4j
 @Service("xhsSyncService")
+@RequiredArgsConstructor
 public class XhsSyncService implements SyncService {
     private final PlatformConfig config;
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    public XhsSyncService(PlatformConfig config) {
-        this.config = config;
-    }
+    private final WebClient webClient = WebClient.create();
 
     @Override
-    public void publish(ArticleDTO article) throws Exception {
-        String tokenUrl = "https://open.xiaohongshu.com/oauth2/access_token";
-        Map<String, String> params = new HashMap<>();
-        params.put("grant_type", "client_credentials");
-        params.put("client_id", config.getXhsClientId());
-        params.put("client_secret", config.getXhsClientSecret());
+    public Mono<Void> publish(ArticleDTO article) {
+        log.info("[XHS] publishing article: {}", article.getTitle());
 
-        ResponseEntity<Map> tokenResp = restTemplate.postForEntity(tokenUrl, params, Map.class);
-        if (tokenResp.getBody().get("access_token") == null) {
-            throw new RuntimeException("获取小红书 access_token 失败");
-        }
-        String token = (String) tokenResp.getBody().get("access_token");
+        Map<String, String> tokenParams = new HashMap<>();
+        tokenParams.put("grant_type", "client_credentials");
+        tokenParams.put("client_id", config.getXhsClientId());
+        tokenParams.put("client_secret", config.getXhsClientSecret());
 
-        String noteUrl = "https://open.xiaohongshu.com/api/partner/note/create";
+        return webClient.post()
+                .uri("https://open.xiaohongshu.com/oauth2/access_token")
+                .bodyValue(tokenParams)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .flatMap(resp -> {
+                    if (resp.get("access_token") == null) {
+                        return Mono.error(new RuntimeException("获取小红书 access_token 失败"));
+                    }
+                    String token = (String) resp.get("access_token");
+                    return createNote(token, article);
+                });
+    }
+
+    private Mono<Void> createNote(String token, ArticleDTO article) {
         Map<String, Object> body = new HashMap<>();
         body.put("title", article.getTitle());
         body.put("content", article.getSummary());
         body.put("image_urls", article.getImageUrls());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        restTemplate.postForEntity(noteUrl, new HttpEntity<>(body, headers), String.class);
+        return webClient.post()
+                .uri("https://open.xiaohongshu.com/api/partner/note/create")
+                .header("Authorization", "Bearer " + token)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .doOnSuccess(resp -> log.info("[XHS] publish success: {}", resp))
+                .then();
     }
 }

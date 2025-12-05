@@ -1,34 +1,40 @@
 package com.biyebang.halo.publish.domain;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import run.halo.app.extension.AbstractExtension;
+import run.halo.app.extension.GVK;
 
-@Entity
-@Table(name = "plugin_sync_job")
-public class SyncJob {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long articleId;
-    @Enumerated(EnumType.STRING)
-    private PlatformType platform;
-    private String status;
-    private String message;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    // getters and setters omitted for brevity
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getArticleId() { return articleId; }
-    public void setArticleId(Long articleId) { this.articleId = articleId; }
-    public PlatformType getPlatform() { return platform; }
-    public void setPlatform(PlatformType platform) { this.platform = platform; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+import java.time.Instant;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@GVK(group = "publish.halo.run", version = "v1alpha1", kind = "SyncJob",
+        plural = "syncjobs", singular = "syncjob")
+public class SyncJob extends AbstractExtension {
+
+    @Schema(requiredMode = REQUIRED)
+    private SyncJobSpec spec;
+
+    private SyncJobStatus status;
+
+    @Data
+    public static class SyncJobSpec {
+        @Schema(requiredMode = REQUIRED)
+        private String articleName;
+
+        @Schema(requiredMode = REQUIRED)
+        private PlatformType platform;
+    }
+
+    @Data
+    public static class SyncJobStatus {
+        private String state; // PENDING, RUNNING, SUCCESS, FAILED
+        private String message;
+        private Instant startedAt;
+        private Instant completedAt;
+    }
 }
